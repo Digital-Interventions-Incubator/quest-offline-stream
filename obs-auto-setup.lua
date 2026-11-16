@@ -17,13 +17,14 @@
 -- If the source shows black: open the source's Properties and re-pick the
 -- "Quest3Full" window, then click the button again.
 
+local obs = obslua
+
 local SCENE_NAME = "Quest Stream"
 local SOURCE_NAME = "Quest3Full"
 local FILTER_NAME = "Crop One Eye"
 local WINDOW_TITLE = "Quest3Full"
 local ROTATION = -22
 
-local ALIGN_TOP_LEFT = 5 -- OBS_ALIGN_LEFT(1) | OBS_ALIGN_TOP(4)
 local ALIGN_CENTER = 0
 
 local function log(msg)
@@ -51,13 +52,11 @@ local function get_or_create_scene()
         obs.obs_source_release(src)
         return scene
     end
-    local added = obs.obs_frontend_add_scene(SCENE_NAME)
-    if not added then
+    local scene = obs.obs_scene_create(SCENE_NAME)
+    if not scene then
         warn("Could not create scene " .. SCENE_NAME)
         return nil
     end
-    local scene = obs.obs_scene_from_source(added)
-    obs.obs_source_release(added)
     return scene
 end
 
@@ -81,7 +80,7 @@ local function compute_crop(source)
     local crop = { left = 0, top = 200, right = 800, bottom = 200 }
     local w = obs.obs_source_get_width(source)
     local h = obs.obs_source_get_height(source)
-    if w > 0 and h > 0 then
+    if w > 50 and h > 50 then
         crop.right = math.floor(w / 2) -- drop the right eye
         local want_h = math.floor((w / 2) * 9 / 16) -- 16:9 of the remaining eye
         local v = math.floor((h - want_h) / 2)
@@ -90,13 +89,12 @@ local function compute_crop(source)
         log(("Capture %dx%d -> crop right=%d top=%d bottom=%d")
             :format(w, h, crop.right, crop.top, crop.bottom))
     else
-        warn("Capture not live yet: using default crop (800/200/200). Start the stream, then click the button again for the exact crop.")
+        warn("Capture not connected (size " .. w .. "x" .. h .. "). If it stays this way, open the source's Properties and re-pick the Quest3Full window, then click the button again for the exact crop.")
     end
     return crop
 end
 
-local function setup_filter(source)
-    local crop = compute_crop(source)
+local function setup_filter(source, crop)
     local settings = obs.obs_data_create()
     obs.obs_data_set_bool(settings, "relative", false)
     obs.obs_data_set_int(settings, "left", crop.left)
@@ -119,25 +117,37 @@ local function setup_filter(source)
     obs.obs_data_release(settings)
 end
 
-local function setup_transform(scene, source)
+local function setup_transform(scene, source, crop)
     local item = obs.obs_scene_find_source(scene, SOURCE_NAME)
     if not item then
         warn("Source not found in scene")
         return
     end
     local cw, ch = get_canvas_size()
-    local info = obs.obs_transform_info()
-    info.pos.x = 0
-    info.pos.y = 0
-    info.rot = ROTATION
-    info.scale.x = 1
-    info.scale.y = 1
-    info.alignment = ALIGN_TOP_LEFT
-    info.bounds_type = obs.OBS_BOUNDS_FIT
-    info.bounds_alignment = ALIGN_CENTER
-    info.bounds.x = cw
-    info.bounds.y = ch
-    obs.obs_sceneitem_set_info(item, info)
+    local w = obs.obs_source_get_width(source)
+    local h = obs.obs_source_get_height(source)
+    local pos = obs.vec2()
+    pos.x = cw / 2
+    pos.y = ch / 2
+    local scale = obs.vec2()
+    scale.x = 1
+    scale.y = 1
+    if w > 50 and h > 50 then
+        -- Size of the visible (cropped) region.
+        local region_w = w - crop.left - crop.right
+        local region_h = h - crop.top - crop.bottom
+        -- Rotated bounding box, same math as OBS "Fit to canvas".
+        local rad = math.rad(math.abs(ROTATION))
+        local bbox_w = region_w * math.cos(rad) + region_h * math.sin(rad)
+        local bbox_h = region_w * math.sin(rad) + region_h * math.cos(rad)
+        local s = math.min(cw / bbox_w, ch / bbox_h)
+        scale.x = s
+        scale.y = s
+    end
+    obs.obs_sceneitem_set_pos(item, pos)
+    obs.obs_sceneitem_set_rot(item, ROTATION)
+    obs.obs_sceneitem_set_scale(item, scale)
+    obs.obs_sceneitem_set_alignment(item, ALIGN_CENTER)
     obs.obs_sceneitem_release(item)
 end
 
@@ -158,8 +168,9 @@ function apply_setup_clicked()
         obs.obs_scene_add(scene, source)
     end
 
-    setup_filter(source)
-    setup_transform(scene, source)
+    local crop = compute_crop(source)
+    setup_filter(source, crop)
+    setup_transform(scene, source, crop)
     obs.obs_frontend_set_current_scene(scene_source)
 
     obs.obs_source_release(source)
