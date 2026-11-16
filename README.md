@@ -42,14 +42,19 @@ If you know the IP changed, you can override without re-running setup:
 queststream.bat 192.168.1.42
 ```
 
-## 🎨 OBS "TV-Ready" Cleanup (once)
+## 🎨 Single-Eye "TV-Ready" View (once, via the OBS script)
 
-You can also use Shift + Drag for freeform fitting.
+The scrcpy feed shows both eyes. A Lua script sets up the single-eye crop, tilt fix and canvas fit automatically — no manual filter fiddling.
 
-1. **Add Source:** create a *Window Capture* source and select the `Quest3Full` window.
-2. **Crop Filter:** right-click the source > *Filters* > *+* > *Crop/Pad*. Right: `800` (removes the right eye). Top/Bottom: `225` (centers the 16:9 view).
-3. **Fix the Tilt:** right-click the source > *Transform* > *Edit Transform*. Rotation: `-22` (fixes the Quest 3 downward camera angle).
-4. **Cast to TV:** right-click the OBS Preview > *Fullscreen Projector* > pick your TV (or use Win + K).
+1. In OBS: **Tools > Scripts > +** and select `obs-auto-setup.lua` (keep it loaded).
+2. Start the stream with `queststream.bat`, then in the script dialog click **Apply Quest Stream Setup** once. OBS switches to the **Quest Stream** scene with the right eye cropped out, the view centered to 16:9, and the `-22°` tilt fix.
+3. **Cast to TV:** right-click the OBS Preview > *Fullscreen Projector* > pick your TV (or use Win + K).
+
+Notes:
+- Click the button again if the crop looks off (it recomputes from the live capture size).
+- If the source shows black, open the source's *Properties* and re-pick the `Quest3Full` window, then click the button again.
+- Want to fill the whole screen instead of fitting? *Right-click source > Transform > Edit Transform > Bounds Type: Stretch*.
+- Manual alternative (no script): Window Capture source on `Quest3Full` + *Crop/Pad* filter (Right `800`, Top/Bottom `225`) + *Transform* rotation `-22`.
 
 ## 💡 Troubleshooting
 
