@@ -22,7 +22,7 @@ if not exist "%~dp0adb.exe" (
 set "IP=%~1"
 if not defined IP (
     if exist "%~dp0quest-ip.txt" (
-        for /f "usebackq delims=" %%a in (`type "%~dp0quest-ip.txt"`) do (
+        for /f "usebackq delims=" %%a in ("%~dp0quest-ip.txt") do (
             if not defined IP set "IP=%%a"
         )
     )

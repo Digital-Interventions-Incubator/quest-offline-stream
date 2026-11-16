@@ -31,12 +31,18 @@ echo Switching the headset to wireless mode (port 5555)...
 "%~dp0adb.exe" tcpip 5555
 
 echo Detecting the Quest's Wi-Fi IP...
+:: token 9 exists only on the "src <IP>" line; for /f skips shorter lines
+"%~dp0adb.exe" shell ip route > "%~dp0route.tmp" 2>nul
 set "IP="
-for /f "usebackq delims=" %%a in (`"%~dp0adb.exe" shell ip route ^| findstr "src" ^| powershell -NoProfile -Command "($input -join ' ') -replace '\r' -split '\s+' | Select-Object -Last 1"`) do set "IP=%%a"
+for /f "usebackq tokens=9" %%a in ("%~dp0route.tmp") do set "IP=%%a"
+del "%~dp0route.tmp" >nul 2>&1
 
 if not defined IP (
-    echo ERROR: Could not read the headset's Wi-Fi IP.
-    echo Make sure the Quest is connected to Wi-Fi, then try again.
+    echo Could not detect the IP automatically.
+    set /p "IP=Type the headset's IP from Headset Settings ^> Wi-Fi: "
+)
+if not defined IP (
+    echo ERROR: No IP given.
     pause
     exit /b 1
 )
