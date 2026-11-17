@@ -1,6 +1,6 @@
 # Quest 3 "One-Click" Wireless Streamer (no adb install needed) 🎮📺
 
-Local, flicker-free casting of your **Meta Quest 3** to a PC or TV using **scrcpy** and **OBS Studio** — **Windows only**.
+Local, flicker-free casting of your **Meta Quest 3** to a PC or TV using **scrcpy** (OBS Studio optional) — **Windows only**.
 
 ## Why this fork
 
@@ -15,9 +15,9 @@ What you do instead:
 
 ## 🛠️ Setup (you, the host — not the end user)
 
-1. **scrcpy (v3.3.4 or newer):** [Download from GitHub](https://github.com/Genymobile/scrcpy/releases) and extract the zip to a folder like `C:\scrcpy`.
+1. **scrcpy (v5.0.1 or newer):** [Download from GitHub](https://github.com/Genymobile/scrcpy/releases) and extract the zip to a folder like `C:\scrcpy`. Older versions (v3.x/v4.x) show a **black screen** on recent Quest firmware (upstream scrcpy bug #5913, fixed in v5).
 2. Copy `setup-stream.bat` and `queststream.bat` **into that same folder** (next to `scrcpy.exe` and `adb.exe`).
-3. **OBS Studio:** install it from [obsproject.com](https://obsproject.com/download) (the default install path is auto-detected; a `OBS Studio.lnk` shortcut on `C:\Users\Public\Desktop` also works).
+3. **OBS Studio (optional, only for the TV/fallback path):** install it from [obsproject.com](https://obsproject.com/download) (the default install path is auto-detected; a `OBS Studio.lnk` shortcut on `C:\Users\Public\Desktop` also works).
 
 ## 🔑 One-time: Developer Mode (once per Meta account)
 
@@ -34,7 +34,7 @@ What you do instead:
 
 ## 📶 Streaming
 
-Double-click **`queststream.bat`**. It reconnects over Wi-Fi, launches OBS, and opens the scrcpy window titled **`Quest3Full`**.
+Double-click **`queststream.bat`**. It reconnects over Wi-Fi, asks which view you want (see below), and opens the scrcpy window titled **`Quest3Full`**. OBS is optional — no longer auto-launched.
 
 If you know the IP changed, you can override without re-running setup:
 
@@ -42,25 +42,35 @@ If you know the IP changed, you can override without re-running setup:
 queststream.bat 192.168.1.42
 ```
 
-## 🎨 Single-Eye "TV-Ready" View (once, via the OBS script)
+## 🎨 Single-Eye "TV-Ready" View
 
-The scrcpy feed shows both eyes. A Lua script sets up the single-eye crop, tilt fix and canvas fit automatically — no manual filter fiddling.
+`queststream.bat` now asks **[L/R/B]** on launch:
+
+- **L** — left eye only, cropped to a normal 16:9 screen, tilt fixed (`22°`), fullscreen. This is what you want on a TV.
+- **R** — same, right eye.
+- **B** — both eyes, exactly the old behavior (no crop, windowed).
+
+The crop is computed live from the headset's reported screen size (`wm size`). The script prints the values it picked (`Crop: --crop=...`); if the view looks wrong, note those numbers and tweak.
+
+### Fallback: OBS (only if the scrcpy crop flickers or you want the OBS scene)
+
+`--crop` can flicker on some Quest firmware. If it does, choose **B** and let OBS do the crop instead:
 
 1. In OBS: **Tools > Scripts > +** and select `obs-auto-setup.lua` (keep it loaded).
-2. Start the stream with `queststream.bat`, then in the script dialog click **Apply Quest Stream Setup** once. OBS switches to the **Quest Stream** scene with the right eye cropped out, the view centered to 16:9, and the `-22°` tilt fix.
+2. Start the stream with `queststream.bat`, then in the script dialog pick the **Eye** (*Both / Left / Right*) and click **Apply Quest Stream Setup** once. OBS switches to the **Quest Stream** scene with the chosen crop applied, the view centered to 16:9, and the `-22°` tilt fix.
 3. **Cast to TV:** right-click the OBS Preview > *Fullscreen Projector* > pick your TV (or use Win + K).
 
 Notes:
-- Click the button again if the crop looks off (it recomputes from the live capture size).
+- The button is idempotent — re-clicking is always safe, e.g. after switching the Eye or if the crop looks off (it recomputes from the live capture size).
 - If the source shows black, open the source's *Properties* and re-pick the `Quest3Full` window, then click the button again.
-- Want to fill the whole screen instead of fitting? *Right-click source > Transform > Edit Transform > Bounds Type: Stretch*.
-- Manual alternative (no script): Window Capture source on `Quest3Full` + *Crop/Pad* filter (Right `800`, Top/Bottom `225`) + *Transform* rotation `-22`.
+- Manual alternative (no script): Window Capture source on `Quest3Full` + *Crop/Pad* filter with *Relative* off (Right = half the capture width) + *Transform* rotation `-22`.
 
 ## 💡 Troubleshooting
 
 - **"Could not connect"** — headset asleep or not on the same Wi-Fi as the PC, or you haven't run `setup-stream.bat` since the last headset reboot. Run it again.
 - **IP changed?** Re-run `setup-stream.bat` (or pass the IP to `queststream.bat`).
-- **Flickering?** Never add `--crop` to the scrcpy flags — let OBS do the cropping.
+- **Flickering with L/R?** `--crop` can flicker on some firmware. Pick **B** and use the OBS fallback above.
+- **Wrong tilt direction?** Open `queststream.bat` and flip the sign: `--angle=22` ↔ `--angle=-22`.
 - **Laggy?** Put the Quest on 5 GHz/6 GHz Wi-Fi and the PC on Ethernet.
 - **"adb.exe not found"** — the bats are not in the scrcpy folder, or you downloaded scrcpy without adb (the default Windows zip includes it).
 
