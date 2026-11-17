@@ -6,8 +6,8 @@ title Quest 3 Wireless Streamer
 :: Tilt correction in degrees (positive = clockwise). Try 0, 10, -10...
 :: The right eye gets the OPPOSITE tilt (mirrored stereo half).
 set "TILT_L=22"
-:: Manual crop overrides as "W:H:X:Y" in mirror-surface pixels (3200x1728).
-:: Leave empty to auto-compute (left: x=0, right: x=1600). Example:
+:: Manual crop overrides as "W:H:X:Y" in mirror-surface pixels
+:: (Quest 3 panel: 4128x2208, left eye x=0, right eye x=2064). Example:
 :: set "MANUAL_CROP_R=1560:877:1640:425"
 set "MANUAL_CROP_L="
 set "MANUAL_CROP_R="
@@ -57,6 +57,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:: 1.5 Reset any display override: an active `wm size` override (set by other
+:: streaming tools) stretches the mirror surface and breaks the crop math.
+"%~dp0adb.exe" -s %IP%:5555 shell wm size > "%~dp0wm.tmp" 2>nul
+findstr /i /c:"Override size:" "%~dp0wm.tmp" >nul
+if not errorlevel 1 (
+    echo 1.5 Display override detected - resetting to the panel size...
+    "%~dp0adb.exe" -s %IP%:5555 shell wm size reset
+)
+del "%~dp0wm.tmp" >nul 2>&1
+
 echo 2. Choose the view: L = left eye (normal screen), R = right eye, B = both eyes.
 choice /c LRB /n /m "Your choice [L/R/B]: "
 set "EYE=%errorlevel%"
@@ -66,9 +76,10 @@ if %EYE%==3 goto launch
 
 :: Read the headset's screen size to compute the crop.
 set "W="
-:: Mirror-surface size override (Quest 3: confirmed via scrcpy "Texture: WxH"
-:: log line — the mirrored surface equals the panel, 4128x2208).
-:: Empty these two to fall back to `wm size` detection.
+:: Mirror-surface size override (Quest 3 panel: 4128x2208). The Quest's
+:: reported size can drift (wm size overrides by other apps), so the panel
+:: size is pinned here. Empty these two to fall back to `wm size` detection.
+:: An active `wm size` override is reset after connecting (see step 1.5).
 set "NATIVE_W=4128"
 set "NATIVE_H=2208"
 if defined NATIVE_W set /a W=NATIVE_W, H=NATIVE_H 2>nul
