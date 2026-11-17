@@ -18,21 +18,41 @@ if not exist "%~dp0adb.exe" (
     exit /b 1
 )
 
-"%~dp0adb.exe" get-state >nul 2>&1
-if errorlevel 1 (
+:: Clear stale wireless entries (e.g. an old IP stuck "offline")
+"%~dp0adb.exe" disconnect >nul 2>&1
+
+:: Pick the USB headset serial (adb gets confused by multiple devices,
+:: e.g. a stale Wi-Fi entry, so every command must be targeted with -s).
+"%~dp0adb.exe" devices 2>nul | findstr /v /c:":5555" > "%~dp0devices.tmp"
+set "SERIAL="
+for /f "usebackq tokens=1,2" %%a in ("%~dp0devices.tmp") do (
+    if "%%b"=="device" set "SERIAL=%%a"
+)
+del "%~dp0devices.tmp" >nul 2>&1
+
+if not defined SERIAL (
     echo ERROR: No headset detected over USB.
     echo Check the cable, then unlock the headset and accept the
-    echo "USB debugging" dialog.
+    echo "USB debugging" dialog. Current adb devices:
+    "%~dp0adb.exe" devices
+    pause
+    exit /b 1
+)
+
+"%~dp0adb.exe" -s %SERIAL% get-state >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Headset %SERIAL% is not ready. Check the cable and
+    echo accept the "USB debugging" dialog in the headset.
     pause
     exit /b 1
 )
 
 echo Switching the headset to wireless mode (port 5555)...
-"%~dp0adb.exe" tcpip 5555
+"%~dp0adb.exe" -s %SERIAL% tcpip 5555
 
 echo Detecting the Quest's Wi-Fi IP...
 :: token 9 exists only on the "src <IP>" line; for /f skips shorter lines
-"%~dp0adb.exe" shell ip route > "%~dp0route.tmp" 2>nul
+"%~dp0adb.exe" -s %SERIAL% shell ip route > "%~dp0route.tmp" 2>nul
 set "IP="
 for /f "usebackq tokens=9" %%a in ("%~dp0route.tmp") do set "IP=%%a"
 del "%~dp0route.tmp" >nul 2>&1

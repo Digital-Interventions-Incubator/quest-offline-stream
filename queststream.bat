@@ -56,7 +56,7 @@ if exist "C:\Users\Public\Desktop\OBS Studio.lnk" (
 )
 
 echo 3. Launching scrcpy (window: Quest3Full)...
-"%~dp0scrcpy.exe" --window-title "Quest3Full" --video-codec=h264 --video-bit-rate=12M --max-fps=60 -m 1600 --video-buffer=5 --no-audio
+"%~dp0scrcpy.exe" --serial %IP%:5555 --window-title "Quest3Full" --video-codec=h264 --video-bit-rate=12M --max-fps=60 -m 1600 --video-buffer=5 --no-audio
 
 echo ------------------------------------------------------
 echo  Stream closed.
