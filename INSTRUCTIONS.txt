@@ -1,0 +1,50 @@
+HOW TO CAST YOUR QUEST 3 TO THIS PC
+====================================
+
+Two black windows do all the work. You never type commands.
+
+
+--- FIRST TIME (or whenever the headset was restarted) ---
+
+1. Connect the headset to this PC with the USB-C cable.
+2. Put the headset on. If it shows "Allow USB debugging?",
+   choose "Always allow from this computer" and accept.
+3. Double-click:  setup-stream.bat
+4. Wait until it says "DONE", then unplug the cable.
+
+
+--- IF IT ASKS YOU FOR THE IP ---
+
+Sometimes the setup window cannot find the headset's IP by
+itself and asks you to type it. Do this:
+
+1. Put the headset on.
+2. Go to:  Settings  >  Wi-Fi  >  tap the name of your network.
+3. Look for "IP address" - four numbers separated by dots,
+   for example  192.168.1.42
+4. Type those numbers into the black window and press Enter.
+
+Tip: the headset covers your eyes, so it helps if someone else
+reads the numbers to you while you type them.
+
+
+--- EVERY TIME YOU WANT TO STREAM ---
+
+1. Make sure the headset is awake and connected to the same
+   Wi-Fi as this PC (or to a hotspot created by this PC - that
+   also works).
+2. Double-click:  queststream.bat
+3. When it asks [L/R/B], press:
+      L = single view, like a normal screen  <-- usually this one
+      R = the other single view
+      B = both eyes (wide view)
+4. The scrcpy window opens - that is your stream.
+5. To stop: close the scrcpy window.
+
+
+--- IF SOMETHING GOES WRONG ---
+
+- "Could not connect": the headset is asleep, on a different
+  Wi-Fi (or hotspot), or its IP changed. Redo the FIRST TIME
+  steps (plug the USB cable again).
+- Black window: close it and double-click queststream.bat again.

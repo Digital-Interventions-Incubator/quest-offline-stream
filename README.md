@@ -13,6 +13,8 @@ What you do instead:
 | Once (per headset reboot) | Plug in USB, double-click `setup-stream.bat`, unplug |
 | Every time | Double-click `queststream.bat` |
 
+End users (non-technical) only ever need to read **`INSTRUCTIONS.txt`** — a plain runbook covering the two scripts, the IP fallback, and the common failures. Keep it next to the bats in the folder you hand over.
+
 ## 🛠️ Setup (you, the host — not the end user)
 
 1. **scrcpy (v5.0.1 or newer):** [Download from GitHub](https://github.com/Genymobile/scrcpy/releases) and extract the zip to a folder like `C:\scrcpy`. Older versions (v3.x/v4.x) show a **black screen** on recent Quest firmware (upstream scrcpy bug #5913, fixed in v5).
