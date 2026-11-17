@@ -4,10 +4,13 @@ title Quest 3 Wireless Streamer
 
 :: ---- Fine-tune knobs ----
 :: Tilt correction in degrees (positive = clockwise). Try 0, 10, -10...
-set "TILT=22"
-:: Manual crop override as "W:H:X:Y" in mirror-surface pixels (3200x1728).
-:: Leave empty to auto-compute. Example: set "MANUAL_CROP=1600:900:0:414"
-set "MANUAL_CROP="
+:: The right eye gets the OPPOSITE tilt (mirrored stereo half).
+set "TILT_L=22"
+:: Manual crop overrides as "W:H:X:Y" in mirror-surface pixels (3200x1728).
+:: Leave empty to auto-compute (left: x=0, right: x=1600). Example:
+:: set "MANUAL_CROP_R=1560:877:1640:425"
+set "MANUAL_CROP_L="
+set "MANUAL_CROP_R="
 
 echo ------------------------------------------------------
 echo  QUEST 3 WIRELESS STREAMER
@@ -63,11 +66,11 @@ if %EYE%==3 goto launch
 
 :: Read the headset's screen size to compute the crop.
 set "W="
-:: Mirror-surface size override (Quest 3: derived from scrcpy "Texture: WxH"
-:: log line; the panel size from `wm size` is NOT the mirrored surface).
+:: Mirror-surface size override (Quest 3: confirmed via scrcpy "Texture: WxH"
+:: log line — the mirrored surface equals the panel, 4128x2208).
 :: Empty these two to fall back to `wm size` detection.
-set "NATIVE_W=3200"
-set "NATIVE_H=1728"
+set "NATIVE_W=4128"
+set "NATIVE_H=2208"
 if defined NATIVE_W set /a W=NATIVE_W, H=NATIVE_H 2>nul
 if not defined W goto read_wm
 goto have_size
@@ -85,13 +88,18 @@ if not defined H goto both_fallback
 :: Work in landscape: W = long side.
 if %H% gtr %W% set /a W=W+H & set /a H=W-H & set /a W=W-H
 set /a HALF=W/2, CH=HALF*9/16, CY=(H-CH)/2
-set "TILT_ARGS=--angle=%TILT% --fullscreen"
-if defined MANUAL_CROP (
-    set "CROP=--crop=%MANUAL_CROP%"
-) else if %EYE%==1 (
-    set "CROP=--crop=%HALF%:%CH%:0:%CY%"
+:: h264 needs even dimensions; round down.
+set /a CH=CH/2*2, CY=CY/2*2
+if %EYE%==1 (
+    set "TILT_ARGS=--angle=%TILT_L% --fullscreen"
 ) else (
-    set "CROP=--crop=%HALF%:%CH%:%HALF%:%CY%"
+    set /a TILT_R=0-TILT_L
+    set "TILT_ARGS=--angle=!TILT_R! --fullscreen"
+)
+if %EYE%==1 (
+    if defined MANUAL_CROP_L (set "CROP=--crop=%MANUAL_CROP_L%") else set "CROP=--crop=%HALF%:%CH%:0:%CY%"
+) else (
+    if defined MANUAL_CROP_R (set "CROP=--crop=%MANUAL_CROP_R%") else set "CROP=--crop=%HALF%:%CH%:%HALF%:%CY%"
 )
 echo   Crop: %CROP%  (if the view looks wrong, report these numbers)
 goto launch
